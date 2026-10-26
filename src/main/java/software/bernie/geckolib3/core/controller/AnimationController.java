@@ -59,23 +59,7 @@ public class AnimationController<T extends IAnimatable> {
      */
     public double transitionLengthTicks;
 
-    /**
-     * The sound listener is called every time a sound keyframe is encountered (i.e.
-     * every frame)
-     */
-    private ISoundListener<T> soundListener;
-
-    /**
-     * The particle listener is called every time a particle keyframe is encountered
-     * (i.e. every frame)
-     */
-    private IParticleListener<T> particleListener;
-
-    /**
-     * The custom instruction listener is called every time a custom instruction
-     * keyframe is encountered (i.e. every frame)
-     */
-    private ICustomInstructionListener<T> customInstructionListener;
+    private final KeyframeEventDispatcher<T> eventDispatcher = new KeyframeEventDispatcher<>();
 
     public boolean isJustStarting = false;
 
@@ -161,7 +145,6 @@ public class AnimationController<T extends IAnimatable> {
     public Function<Double, Double> customEasingMethod;
     protected boolean needsAnimationReload = false;
     public double animationSpeed = 1D;
-    private final Set<EventKeyFrame<?>> executedKeyFrames = new HashSet<>();
 
     private Set<String> missingAnimations = new HashSet<>();
 
@@ -334,21 +317,21 @@ public class AnimationController<T extends IAnimatable> {
      * Registers a sound listener.
      */
     public void registerSoundListener(ISoundListener<T> soundListener) {
-        this.soundListener = soundListener;
+        eventDispatcher.registerSoundListener(soundListener);
     }
 
     /**
      * Registers a particle listener.
      */
     public void registerParticleListener(IParticleListener<T> particleListener) {
-        this.particleListener = particleListener;
+        eventDispatcher.registerParticleListener(particleListener);
     }
 
     /**
      * Registers a custom instruction listener.
      */
     public void registerCustomInstructionListener(ICustomInstructionListener<T> customInstructionListener) {
-        this.customInstructionListener = customInstructionListener;
+        eventDispatcher.registerCustomInstructionListener(customInstructionListener);
     }
 
     /**
@@ -425,7 +408,7 @@ public class AnimationController<T extends IAnimatable> {
             if (tick == 0 || isJustStarting) {
                 justStartedTransition = false;
                 this.currentAnimation = animationQueue.poll();
-                resetEventKeyFrames();
+                eventDispatcher.reset();
                 saveSnapshotsForAnimation(currentAnimation, boneSnapshotCollection);
             }
             if (currentAnimation != null) {
@@ -562,7 +545,7 @@ public class AnimationController<T extends IAnimatable> {
         assert currentAnimation != null;
         // Animation has ended
         if (tick >= currentAnimation.animationLength) {
-            resetEventKeyFrames();
+            eventDispatcher.reset();
             // If the current animation is set to loop, keep it as the current animation and
             // just start over
             if (!currentAnimation.loop) {
@@ -632,42 +615,7 @@ public class AnimationController<T extends IAnimatable> {
             }
         }
 
-        if (soundListener != null) {
-            for (EventKeyFrame<String> soundKeyFrame : currentAnimation.soundKeyFrames) {
-                if (!this.executedKeyFrames.contains(soundKeyFrame) && tick >= soundKeyFrame.getStartTick()) {
-                    SoundKeyframeEvent<T> event = new SoundKeyframeEvent<>(this.animatable, tick,
-                            soundKeyFrame.getEventData(), this, context);
-                    soundListener.playSound(event);
-
-                    this.executedKeyFrames.add(soundKeyFrame);
-                }
-            }
-        }
-        if (particleListener != null) {
-            for (ParticleEventKeyFrame particleEventKeyFrame : currentAnimation.particleKeyFrames) {
-                if (!this.executedKeyFrames.contains(
-                        particleEventKeyFrame) && tick >= particleEventKeyFrame.getStartTick()) {
-                    ParticleKeyFrameEvent<T> event = new ParticleKeyFrameEvent<>(this.animatable, tick,
-                            particleEventKeyFrame.effect, particleEventKeyFrame.locator, particleEventKeyFrame.script,
-                            this, context);
-                    particleListener.summonParticle(event);
-
-                    this.executedKeyFrames.add(particleEventKeyFrame);
-                }
-            }
-        }
-        if (customInstructionListener != null) {
-            for (EventKeyFrame<Evaluatable> customInstructionKeyFrame : currentAnimation.customInstructionKeyframes) {
-                if (!this.executedKeyFrames.contains(
-                        customInstructionKeyFrame) && tick >= customInstructionKeyFrame.getStartTick()) {
-                    CustomInstructionKeyframeEvent<T> event = new CustomInstructionKeyframeEvent<>(this.animatable,
-                            tick, customInstructionKeyFrame.getEventData(), this, context);
-                    customInstructionListener.executeInstruction(event);
-
-                    this.executedKeyFrames.add(customInstructionKeyFrame);
-                }
-            }
-        }
+        eventDispatcher.dispatch(this, tick, context);
 
         if (this.transitionLengthTicks == 0 && shouldResetTick && this.animationState == AnimationState.Transitioning) {
             previousAnimation = currentAnimation;
@@ -704,10 +652,6 @@ public class AnimationController<T extends IAnimatable> {
                                                     Axis axis, Evaluator evaluator) {
         setAnimTime(context, tick);
         return KeyframeSampler.sample(frames, tick, isRotation, axis, evaluator);
-    }
-
-    private void resetEventKeyFrames() {
-        this.executedKeyFrames.clear();
     }
 
     public void markNeedsReload() {
