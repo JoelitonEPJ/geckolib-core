@@ -606,29 +606,29 @@ public class AnimationController<T extends IAnimatable> {
 
             if (!rotationKeyFrames.xKeyFrames.isEmpty()) {
                 boneAnimationQueue.rotationXQueue
-                        .add(getAnimationPointAtTick(rotationKeyFrames.xKeyFrames, tick, true, Axis.X, evaluator));
+                        .add(KeyframeSampler.sample(rotationKeyFrames.xKeyFrames, tick, true, Axis.X, evaluator));
                 boneAnimationQueue.rotationYQueue
-                        .add(getAnimationPointAtTick(rotationKeyFrames.yKeyFrames, tick, true, Axis.Y, evaluator));
+                        .add(KeyframeSampler.sample(rotationKeyFrames.yKeyFrames, tick, true, Axis.Y, evaluator));
                 boneAnimationQueue.rotationZQueue
-                        .add(getAnimationPointAtTick(rotationKeyFrames.zKeyFrames, tick, true, Axis.Z, evaluator));
+                        .add(KeyframeSampler.sample(rotationKeyFrames.zKeyFrames, tick, true, Axis.Z, evaluator));
             }
 
             if (!positionKeyFrames.xKeyFrames.isEmpty()) {
                 boneAnimationQueue.positionXQueue
-                        .add(getAnimationPointAtTick(positionKeyFrames.xKeyFrames, tick, false, Axis.X, evaluator));
+                        .add(KeyframeSampler.sample(positionKeyFrames.xKeyFrames, tick, false, Axis.X, evaluator));
                 boneAnimationQueue.positionYQueue
-                        .add(getAnimationPointAtTick(positionKeyFrames.yKeyFrames, tick, false, Axis.Y, evaluator));
+                        .add(KeyframeSampler.sample(positionKeyFrames.yKeyFrames, tick, false, Axis.Y, evaluator));
                 boneAnimationQueue.positionZQueue
-                        .add(getAnimationPointAtTick(positionKeyFrames.zKeyFrames, tick, false, Axis.Z, evaluator));
+                        .add(KeyframeSampler.sample(positionKeyFrames.zKeyFrames, tick, false, Axis.Z, evaluator));
             }
 
             if (!scaleKeyFrames.xKeyFrames.isEmpty()) {
                 boneAnimationQueue.scaleXQueue
-                        .add(getAnimationPointAtTick(scaleKeyFrames.xKeyFrames, tick, false, Axis.X, evaluator));
+                        .add(KeyframeSampler.sample(scaleKeyFrames.xKeyFrames, tick, false, Axis.X, evaluator));
                 boneAnimationQueue.scaleYQueue
-                        .add(getAnimationPointAtTick(scaleKeyFrames.yKeyFrames, tick, false, Axis.Y, evaluator));
+                        .add(KeyframeSampler.sample(scaleKeyFrames.yKeyFrames, tick, false, Axis.Y, evaluator));
                 boneAnimationQueue.scaleZQueue
-                        .add(getAnimationPointAtTick(scaleKeyFrames.zKeyFrames, tick, false, Axis.Z, evaluator));
+                        .add(KeyframeSampler.sample(scaleKeyFrames.zKeyFrames, tick, false, Axis.Z, evaluator));
             }
         }
 
@@ -703,50 +703,7 @@ public class AnimationController<T extends IAnimatable> {
     private AnimationPoint getTransitionPointAtTick(ExecutionContext context, List<KeyFrame<Evaluatable>> frames, double tick, boolean isRotation,
                                                     Axis axis, Evaluator evaluator) {
         setAnimTime(context, tick);
-        return getAnimationPointAtTick(frames, tick, isRotation, axis, evaluator);
-    }
-
-    // Helper method to transform a KeyFrameLocation to an AnimationPoint
-    private AnimationPoint getAnimationPointAtTick(List<KeyFrame<Evaluatable>> frames, double tick, boolean isRotation,
-                                                   Axis axis, Evaluator evaluator) {
-        KeyFrameLocation<KeyFrame<Evaluatable>> location = getCurrentKeyFrameLocation(frames, tick);
-        KeyFrame<Evaluatable> currentFrame = location.currentFrame;
-        double startValue = currentFrame.getStartValue().evaluate(evaluator);
-        double endValue = currentFrame.getEndValue().evaluate(evaluator);
-
-        if (isRotation) {
-            if (!currentFrame.getStartValue().isConstant()) {
-                startValue = Math.toRadians(startValue);
-                if (axis == Axis.X || axis == Axis.Y) {
-                    startValue *= -1;
-                }
-            }
-            if (!currentFrame.getEndValue().isConstant()) {
-                endValue = Math.toRadians(endValue);
-                if (axis == Axis.X || axis == Axis.Y) {
-                    endValue *= -1;
-                }
-            }
-        }
-
-        return new AnimationPoint(currentFrame, location.currentTick, currentFrame.getLength(), startValue, endValue);
-    }
-
-    /**
-     * Returns the current keyframe object, plus how long the previous keyframes
-     * have taken (aka elapsed animation time)
-     **/
-    private KeyFrameLocation<KeyFrame<Evaluatable>> getCurrentKeyFrameLocation(List<KeyFrame<Evaluatable>> frames,
-                                                                               double ageInTicks) {
-        double totalTimeTracker = 0;
-        for (KeyFrame<Evaluatable> frame : frames) {
-            totalTimeTracker += frame.getLength();
-            if (totalTimeTracker > ageInTicks) {
-                double tick = (ageInTicks - (totalTimeTracker - frame.getLength()));
-                return new KeyFrameLocation<>(frame, tick);
-            }
-        }
-        return new KeyFrameLocation<>(frames.get(frames.size() - 1), ageInTicks);
+        return KeyframeSampler.sample(frames, tick, isRotation, axis, evaluator);
     }
 
     private void resetEventKeyFrames() {
