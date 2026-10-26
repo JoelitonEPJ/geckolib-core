@@ -41,81 +41,12 @@ public class EasingManager
 	}
 
 	// Memoize easing functions so we don't need to create new ones from HOFs every frame
-	static Function<Double, Double> quart = poly(4);
-	static Function<Double, Double> quint = poly(5);
 	static Function<EasingFunctionArgs, Function<Double, Double>> getEasingFunction =
 			Memoizer.memoize(EasingManager::getEasingFuncImpl);
 
 	// Don't call this, use getEasingFunction instead as that function is the memoized version
 	static Function<Double, Double> getEasingFuncImpl(EasingFunctionArgs args) {
-		switch (args.easingType)
-		{
-			default:
-			case Linear:
-				return in(EasingManager::linear);
-			case Step:
-				return in(step(args.arg0));
-			case EaseInSine:
-				return in(EasingManager::sin);
-			case EaseOutSine:
-				return out(EasingManager::sin);
-			case EaseInOutSine:
-				return inOut(EasingManager::sin);
-			case EaseInQuad:
-				return in(EasingManager::quad);
-			case EaseOutQuad:
-				return out(EasingManager::quad);
-			case EaseInOutQuad:
-				return inOut(EasingManager::quad);
-			case EaseInCubic:
-				return in(EasingManager::cubic);
-			case EaseOutCubic:
-				return out(EasingManager::cubic);
-			case EaseInOutCubic:
-				return inOut(EasingManager::cubic);
-			case EaseInExpo:
-				return in(EasingManager::exp);
-			case EaseOutExpo:
-				return out(EasingManager::exp);
-			case EaseInOutExpo:
-				return inOut(EasingManager::exp);
-			case EaseInCirc:
-				return in(EasingManager::circle);
-			case EaseOutCirc:
-				return out(EasingManager::circle);
-			case EaseInOutCirc:
-				return inOut(EasingManager::circle);
-			case EaseInQuart:
-				return in(quart);
-			case EaseOutQuart:
-				return out(quart);
-			case EaseInOutQuart:
-				return inOut(quart);
-			case EaseInQuint:
-				return in(quint);
-			case EaseOutQuint:
-				return out(quint);
-			case EaseInOutQuint:
-				return inOut(quint);
-			case EaseInBack:
-				return in(back(args.arg0));
-			case EaseOutBack:
-				return out(back(args.arg0));
-			case EaseInOutBack:
-				return inOut(back(args.arg0));
-			case EaseInElastic:
-				return in(elastic(args.arg0));
-			case EaseOutElastic:
-				return out(elastic(args.arg0));
-			case EaseInOutElastic:
-				return inOut(elastic(args.arg0));
-			case EaseInBounce:
-				return in(bounce(args.arg0));
-			case EaseOutBounce:
-				return out(bounce(args.arg0));
-			case EaseInOutBounce:
-				return inOut(bounce(args.arg0));
-		}
+		return args.easingType.createFunction(args.arg0);
 	}
 
 	// The MIT license notice below applies to the easing functions below except for bounce and step
