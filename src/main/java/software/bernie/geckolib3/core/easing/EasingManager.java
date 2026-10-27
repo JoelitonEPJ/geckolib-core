@@ -160,22 +160,6 @@ public class EasingManager
 	}
 
 	/**
-	 * A stepping function, returns 1 for any positive value of `n`.
-	 */
-	static Function<Double, Double> step0()
-	{
-		return n -> n > 0 ? 1D : 0;
-	}
-
-	/**
-	 * A stepping function, returns 1 if `n` is greater than or equal to 1.
-	 */
-	static Function<Double, Double> step1()
-	{
-		return n -> n >= 1D ? 1D : 0;
-	}
-
-	/**
 	 * A linear function, `f(t) = t`. Position correlates to elapsed time one to
 	 * one.
 	 * <p>
@@ -313,7 +297,7 @@ public class EasingManager
 	static Function<Double, Double> step(Double stepArg) {
 		int steps = stepArg != null ? stepArg.intValue() : 2;
 		double[] intervals = stepRange(steps);
-		return t -> intervals[findIntervalBorderIndex(t, intervals, false)];
+		return t -> intervals[findIntervalBorderIndex(t, intervals)];
 	}
 
 	static double min(double a, double b, double c, double d)
@@ -354,7 +338,7 @@ public class EasingManager
 	 * @param {Boolean} useRightBorder
 	 * @returns {Number}
 	 */
-	static int findIntervalBorderIndex(double point, double[] intervals, boolean useRightBorder) {
+	static int findIntervalBorderIndex(double point, double[] intervals) {
 		//If point is beyond given intervals
 		if (point < intervals[0])
 			return 0;
@@ -374,7 +358,7 @@ public class EasingManager
 				rightBorderIndex = indexOfNumberToCompare;
 			}
 		}
-		return useRightBorder ? rightBorderIndex : leftBorderIndex;
+		return leftBorderIndex;
 	}
 
 	static double[] stepRange(int steps) {
