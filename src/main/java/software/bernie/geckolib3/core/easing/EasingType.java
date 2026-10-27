@@ -4,51 +4,51 @@ import java.util.function.Function;
 
 public enum EasingType
 {
-	NONE(arg -> EasingManager.in(EasingManager::linear)),
-	CUSTOM(arg -> EasingManager.in(EasingManager::linear)),
+	NONE(arg -> EasingFunctions.in(EasingFunctions::linear)),
+	CUSTOM(arg -> EasingFunctions.in(EasingFunctions::linear)),
 
-	Linear(arg -> EasingManager.in(EasingManager::linear)),
-	Step(arg -> EasingManager.in(EasingManager.step(arg))),
+	Linear(arg -> EasingFunctions.in(EasingFunctions::linear)),
+	Step(arg -> EasingFunctions.in(EasingFunctions.step(arg))),
 
-	EaseInSine(arg -> EasingManager.in(EasingManager::sin)),
-	EaseOutSine(arg -> EasingManager.out(EasingManager::sin)),
-	EaseInOutSine(arg -> EasingManager.inOut(EasingManager::sin)),
+	EaseInSine(arg -> EasingFunctions.in(EasingFunctions::sin)),
+	EaseOutSine(arg -> EasingFunctions.out(EasingFunctions::sin)),
+	EaseInOutSine(arg -> EasingFunctions.inOut(EasingFunctions::sin)),
 
-	EaseInQuad(arg -> EasingManager.in(EasingManager::quad)),
-	EaseOutQuad(arg -> EasingManager.out(EasingManager::quad)),
-	EaseInOutQuad(arg -> EasingManager.inOut(EasingManager::quad)),
+	EaseInQuad(arg -> EasingFunctions.in(EasingFunctions::quad)),
+	EaseOutQuad(arg -> EasingFunctions.out(EasingFunctions::quad)),
+	EaseInOutQuad(arg -> EasingFunctions.inOut(EasingFunctions::quad)),
 
-	EaseInCubic(arg -> EasingManager.in(EasingManager::cubic)),
-	EaseOutCubic(arg -> EasingManager.out(EasingManager::cubic)),
-	EaseInOutCubic(arg -> EasingManager.inOut(EasingManager::cubic)),
+	EaseInCubic(arg -> EasingFunctions.in(EasingFunctions::cubic)),
+	EaseOutCubic(arg -> EasingFunctions.out(EasingFunctions::cubic)),
+	EaseInOutCubic(arg -> EasingFunctions.inOut(EasingFunctions::cubic)),
 
-	EaseInQuart(arg -> EasingManager.in(EasingManager.poly(4))),
-	EaseOutQuart(arg -> EasingManager.out(EasingManager.poly(4))),
-	EaseInOutQuart(arg -> EasingManager.inOut(EasingManager.poly(4))),
+	EaseInQuart(arg -> EasingFunctions.in(EasingFunctions.poly(4))),
+	EaseOutQuart(arg -> EasingFunctions.out(EasingFunctions.poly(4))),
+	EaseInOutQuart(arg -> EasingFunctions.inOut(EasingFunctions.poly(4))),
 
-	EaseInQuint(arg -> EasingManager.in(EasingManager.poly(5))),
-	EaseOutQuint(arg -> EasingManager.out(EasingManager.poly(5))),
-	EaseInOutQuint(arg -> EasingManager.inOut(EasingManager.poly(5))),
+	EaseInQuint(arg -> EasingFunctions.in(EasingFunctions.poly(5))),
+	EaseOutQuint(arg -> EasingFunctions.out(EasingFunctions.poly(5))),
+	EaseInOutQuint(arg -> EasingFunctions.inOut(EasingFunctions.poly(5))),
 
-	EaseInExpo(arg -> EasingManager.in(EasingManager::exp)),
-	EaseOutExpo(arg -> EasingManager.out(EasingManager::exp)),
-	EaseInOutExpo(arg -> EasingManager.inOut(EasingManager::exp)),
+	EaseInExpo(arg -> EasingFunctions.in(EasingFunctions::exp)),
+	EaseOutExpo(arg -> EasingFunctions.out(EasingFunctions::exp)),
+	EaseInOutExpo(arg -> EasingFunctions.inOut(EasingFunctions::exp)),
 
-	EaseInCirc(arg -> EasingManager.in(EasingManager::circle)),
-	EaseOutCirc(arg -> EasingManager.out(EasingManager::circle)),
-	EaseInOutCirc(arg -> EasingManager.inOut(EasingManager::circle)),
+	EaseInCirc(arg -> EasingFunctions.in(EasingFunctions::circle)),
+	EaseOutCirc(arg -> EasingFunctions.out(EasingFunctions::circle)),
+	EaseInOutCirc(arg -> EasingFunctions.inOut(EasingFunctions::circle)),
 
-	EaseInBack(arg -> EasingManager.in(EasingManager.back(arg))),
-	EaseOutBack(arg -> EasingManager.out(EasingManager.back(arg))),
-	EaseInOutBack(arg -> EasingManager.inOut(EasingManager.back(arg))),
+	EaseInBack(arg -> EasingFunctions.in(EasingFunctions.back(arg))),
+	EaseOutBack(arg -> EasingFunctions.out(EasingFunctions.back(arg))),
+	EaseInOutBack(arg -> EasingFunctions.inOut(EasingFunctions.back(arg))),
 
-	EaseInElastic(arg -> EasingManager.in(EasingManager.elastic(arg))),
-	EaseOutElastic(arg -> EasingManager.out(EasingManager.elastic(arg))),
-	EaseInOutElastic(arg -> EasingManager.inOut(EasingManager.elastic(arg))),
+	EaseInElastic(arg -> EasingFunctions.in(EasingFunctions.elastic(arg))),
+	EaseOutElastic(arg -> EasingFunctions.out(EasingFunctions.elastic(arg))),
+	EaseInOutElastic(arg -> EasingFunctions.inOut(EasingFunctions.elastic(arg))),
 
-	EaseInBounce(arg -> EasingManager.in(EasingManager.bounce(arg))),
-	EaseOutBounce(arg -> EasingManager.out(EasingManager.bounce(arg))),
-	EaseInOutBounce(arg -> EasingManager.inOut(EasingManager.bounce(arg)));
+	EaseInBounce(arg -> EasingFunctions.in(EasingFunctions.bounce(arg))),
+	EaseOutBounce(arg -> EasingFunctions.out(EasingFunctions.bounce(arg))),
+	EaseInOutBounce(arg -> EasingFunctions.inOut(EasingFunctions.bounce(arg)));
 
 	private final Function<Double, Function<Double, Double>> functionFactory;
 
