@@ -59,23 +59,7 @@ public class AnimationController<T extends IAnimatable> {
      */
     public double transitionLengthTicks;
 
-    /**
-     * The sound listener is called every time a sound keyframe is encountered (i.e.
-     * every frame)
-     */
-    private ISoundListener<T> soundListener;
-
-    /**
-     * The particle listener is called every time a particle keyframe is encountered
-     * (i.e. every frame)
-     */
-    private IParticleListener<T> particleListener;
-
-    /**
-     * The custom instruction listener is called every time a custom instruction
-     * keyframe is encountered (i.e. every frame)
-     */
-    private ICustomInstructionListener<T> customInstructionListener;
+    private final KeyframeEventDispatcher<T> eventDispatcher = new KeyframeEventDispatcher<>();
 
     public boolean isJustStarting = false;
 
@@ -155,13 +139,12 @@ public class AnimationController<T extends IAnimatable> {
     protected Animation previousAnimation;
     protected AnimationBuilder currentAnimationBuilder = new AnimationBuilder();
     protected boolean shouldResetTick = false;
-    private final HashMap<String, BoneSnapshot> boneSnapshots = new HashMap<>();
+    private final BoneTransitionProcessor transitionProcessor = new BoneTransitionProcessor();
     private boolean justStopped = false;
     protected boolean justStartedTransition = false;
     public Function<Double, Double> customEasingMethod;
     protected boolean needsAnimationReload = false;
     public double animationSpeed = 1D;
-    private final Set<EventKeyFrame<?>> executedKeyFrames = new HashSet<>();
 
     private Set<String> missingAnimations = new HashSet<>();
 
@@ -334,21 +317,21 @@ public class AnimationController<T extends IAnimatable> {
      * Registers a sound listener.
      */
     public void registerSoundListener(ISoundListener<T> soundListener) {
-        this.soundListener = soundListener;
+        eventDispatcher.registerSoundListener(soundListener);
     }
 
     /**
      * Registers a particle listener.
      */
     public void registerParticleListener(IParticleListener<T> particleListener) {
-        this.particleListener = particleListener;
+        eventDispatcher.registerParticleListener(particleListener);
     }
 
     /**
      * Registers a custom instruction listener.
      */
     public void registerCustomInstructionListener(ICustomInstructionListener<T> customInstructionListener) {
-        this.customInstructionListener = customInstructionListener;
+        eventDispatcher.registerCustomInstructionListener(customInstructionListener);
     }
 
     /**
@@ -425,99 +408,12 @@ public class AnimationController<T extends IAnimatable> {
             if (tick == 0 || isJustStarting) {
                 justStartedTransition = false;
                 this.currentAnimation = animationQueue.poll();
-                resetEventKeyFrames();
-                saveSnapshotsForAnimation(currentAnimation, boneSnapshotCollection);
+                eventDispatcher.reset();
+                transitionProcessor.captureSnapshots(boneSnapshotCollection);
             }
             if (currentAnimation != null) {
                 setAnimTime(context, 0);
-                for (IBone bone : modelRendererList) {
-                    BoneAnimationQueue boneAnimationQueue = boneAnimationQueues.get(bone.getName());
-                    BoneSnapshot boneSnapshot = this.boneSnapshots.get(bone.getName());
-
-                    if (boneSnapshot == null) {
-                        continue;
-                    }
-
-                    BoneSnapshot initialSnapshot = bone.getInitialSnapshot();
-
-                    //can be null
-                    BoneAnimation boneAnimation = currentAnimation.boneAnimations.get(bone.getName());
-                    BoneAnimation previousAnimation = this.previousAnimation == null ? null : this.previousAnimation.boneAnimations.get(bone.getName());
-
-                    // Adding the initial positions of the upcoming animation, so the model
-                    // transitions to the initial state of the new animation
-                    if (boneAnimation != null && !boneAnimation.rotationKeyFrames.xKeyFrames.isEmpty()) {
-                        AnimationPoint xPoint = getTransitionPointAtTick(context, boneAnimation.rotationKeyFrames.xKeyFrames, tick, true, Axis.X,
-                                evaluator);
-                        AnimationPoint yPoint = getTransitionPointAtTick(context, boneAnimation.rotationKeyFrames.yKeyFrames, tick, true, Axis.Y,
-                                evaluator);
-                        AnimationPoint zPoint = getTransitionPointAtTick(context, boneAnimation.rotationKeyFrames.zKeyFrames, tick, true, Axis.Z,
-                                evaluator);
-                        boneAnimationQueue.rotationXQueue.add(new AnimationPoint(null, tick, transitionLengthTicks,
-                                boneSnapshot.rotationValueX - initialSnapshot.rotationValueX,
-                                xPoint.animationStartValue));
-                        boneAnimationQueue.rotationYQueue.add(new AnimationPoint(null, tick, transitionLengthTicks,
-                                boneSnapshot.rotationValueY - initialSnapshot.rotationValueY,
-                                yPoint.animationStartValue));
-                        boneAnimationQueue.rotationZQueue.add(new AnimationPoint(null, tick, transitionLengthTicks,
-                                boneSnapshot.rotationValueZ - initialSnapshot.rotationValueZ,
-                                zPoint.animationStartValue));
-                    } else if (previousAnimation != null && !previousAnimation.rotationKeyFrames.xKeyFrames.isEmpty()) {
-                        boneAnimationQueue.rotationXQueue.add(new AnimationPoint(null, tick, transitionLengthTicks,
-                                boneSnapshot.rotationValueX,
-                                initialSnapshot.rotationValueX));
-                        boneAnimationQueue.rotationYQueue.add(new AnimationPoint(null, tick, transitionLengthTicks,
-                                boneSnapshot.rotationValueY,
-                                initialSnapshot.rotationValueY));
-                        boneAnimationQueue.rotationZQueue.add(new AnimationPoint(null, tick, transitionLengthTicks,
-                                boneSnapshot.rotationValueZ,
-                                initialSnapshot.rotationValueZ));
-                    }
-
-                    if (boneAnimation != null && !boneAnimation.positionKeyFrames.xKeyFrames.isEmpty()) {
-                        AnimationPoint xPoint = getTransitionPointAtTick(context, boneAnimation.positionKeyFrames.xKeyFrames, tick, false, Axis.X,
-                                evaluator);
-                        AnimationPoint yPoint = getTransitionPointAtTick(context, boneAnimation.positionKeyFrames.yKeyFrames, tick, false, Axis.Y,
-                                evaluator);
-                        AnimationPoint zPoint = getTransitionPointAtTick(context, boneAnimation.positionKeyFrames.zKeyFrames, tick, false, Axis.Z,
-                                evaluator);
-                        boneAnimationQueue.positionXQueue.add(new AnimationPoint(null, tick, transitionLengthTicks,
-                                boneSnapshot.positionOffsetX, xPoint.animationStartValue));
-                        boneAnimationQueue.positionYQueue.add(new AnimationPoint(null, tick, transitionLengthTicks,
-                                boneSnapshot.positionOffsetY, yPoint.animationStartValue));
-                        boneAnimationQueue.positionZQueue.add(new AnimationPoint(null, tick, transitionLengthTicks,
-                                boneSnapshot.positionOffsetZ, zPoint.animationStartValue));
-                    } else if (previousAnimation != null && !previousAnimation.positionKeyFrames.xKeyFrames.isEmpty()) {
-                        boneAnimationQueue.positionXQueue.add(new AnimationPoint(null, tick, transitionLengthTicks,
-                                boneSnapshot.positionOffsetX, initialSnapshot.positionOffsetX));
-                        boneAnimationQueue.positionYQueue.add(new AnimationPoint(null, tick, transitionLengthTicks,
-                                boneSnapshot.positionOffsetY, initialSnapshot.positionOffsetY));
-                        boneAnimationQueue.positionZQueue.add(new AnimationPoint(null, tick, transitionLengthTicks,
-                                boneSnapshot.positionOffsetZ, initialSnapshot.positionOffsetZ));
-                    }
-
-                    if (boneAnimation != null && !boneAnimation.scaleKeyFrames.xKeyFrames.isEmpty()) {
-                        AnimationPoint xPoint = getTransitionPointAtTick(context, boneAnimation.scaleKeyFrames.xKeyFrames, tick, false, Axis.X,
-                                evaluator);
-                        AnimationPoint yPoint = getTransitionPointAtTick(context, boneAnimation.scaleKeyFrames.yKeyFrames, tick, false, Axis.Y,
-                                evaluator);
-                        AnimationPoint zPoint = getTransitionPointAtTick(context, boneAnimation.scaleKeyFrames.zKeyFrames, tick, false, Axis.Z,
-                                evaluator);
-                        boneAnimationQueue.scaleXQueue.add(new AnimationPoint(null, tick, transitionLengthTicks,
-                                boneSnapshot.scaleValueX, xPoint.animationStartValue));
-                        boneAnimationQueue.scaleYQueue.add(new AnimationPoint(null, tick, transitionLengthTicks,
-                                boneSnapshot.scaleValueY, yPoint.animationStartValue));
-                        boneAnimationQueue.scaleZQueue.add(new AnimationPoint(null, tick, transitionLengthTicks,
-                                boneSnapshot.scaleValueZ, zPoint.animationStartValue));
-                    } else if (previousAnimation != null && !previousAnimation.scaleKeyFrames.xKeyFrames.isEmpty()) {
-                        boneAnimationQueue.scaleXQueue.add(new AnimationPoint(null, tick, transitionLengthTicks,
-                                boneSnapshot.scaleValueX, initialSnapshot.scaleValueX));
-                        boneAnimationQueue.scaleYQueue.add(new AnimationPoint(null, tick, transitionLengthTicks,
-                                boneSnapshot.scaleValueY, initialSnapshot.scaleValueY));
-                        boneAnimationQueue.scaleZQueue.add(new AnimationPoint(null, tick, transitionLengthTicks,
-                                boneSnapshot.scaleValueZ, initialSnapshot.scaleValueZ));
-                    }
-                }
+                transitionProcessor.process(this, tick, modelRendererList, boneAnimationQueues, evaluator, context);
             }
         } else if (getAnimationState() == AnimationState.Running) {
             // Actually run the animation
@@ -548,21 +444,12 @@ public class AnimationController<T extends IAnimatable> {
         return this.animationPredicate.test(event);
     }
 
-    // At the beginning of a new transition, save a snapshot of the model's
-    // rotation, position, and scale values as the initial value to lerp from
-    private void saveSnapshotsForAnimation(Animation animation,
-                                           HashMap<String, Pair<IBone, BoneSnapshot>> boneSnapshotCollection) {
-        for (Pair<IBone, BoneSnapshot> snapshot : boneSnapshotCollection.values()) {
-            this.boneSnapshots.put(snapshot.getLeft().getName(), new BoneSnapshot(snapshot.getRight()));
-        }
-    }
-
     private void processCurrentAnimation(double tick, double actualTick, Evaluator evaluator, ExecutionContext context,
                                          boolean crashWhenCantFindBone) {
         assert currentAnimation != null;
         // Animation has ended
         if (tick >= currentAnimation.animationLength) {
-            resetEventKeyFrames();
+            eventDispatcher.reset();
             // If the current animation is set to loop, keep it as the current animation and
             // just start over
             if (!currentAnimation.loop) {
@@ -606,68 +493,33 @@ public class AnimationController<T extends IAnimatable> {
 
             if (!rotationKeyFrames.xKeyFrames.isEmpty()) {
                 boneAnimationQueue.rotationXQueue
-                        .add(getAnimationPointAtTick(rotationKeyFrames.xKeyFrames, tick, true, Axis.X, evaluator));
+                        .add(KeyframeSampler.sample(rotationKeyFrames.xKeyFrames, tick, true, Axis.X, evaluator));
                 boneAnimationQueue.rotationYQueue
-                        .add(getAnimationPointAtTick(rotationKeyFrames.yKeyFrames, tick, true, Axis.Y, evaluator));
+                        .add(KeyframeSampler.sample(rotationKeyFrames.yKeyFrames, tick, true, Axis.Y, evaluator));
                 boneAnimationQueue.rotationZQueue
-                        .add(getAnimationPointAtTick(rotationKeyFrames.zKeyFrames, tick, true, Axis.Z, evaluator));
+                        .add(KeyframeSampler.sample(rotationKeyFrames.zKeyFrames, tick, true, Axis.Z, evaluator));
             }
 
             if (!positionKeyFrames.xKeyFrames.isEmpty()) {
                 boneAnimationQueue.positionXQueue
-                        .add(getAnimationPointAtTick(positionKeyFrames.xKeyFrames, tick, false, Axis.X, evaluator));
+                        .add(KeyframeSampler.sample(positionKeyFrames.xKeyFrames, tick, false, Axis.X, evaluator));
                 boneAnimationQueue.positionYQueue
-                        .add(getAnimationPointAtTick(positionKeyFrames.yKeyFrames, tick, false, Axis.Y, evaluator));
+                        .add(KeyframeSampler.sample(positionKeyFrames.yKeyFrames, tick, false, Axis.Y, evaluator));
                 boneAnimationQueue.positionZQueue
-                        .add(getAnimationPointAtTick(positionKeyFrames.zKeyFrames, tick, false, Axis.Z, evaluator));
+                        .add(KeyframeSampler.sample(positionKeyFrames.zKeyFrames, tick, false, Axis.Z, evaluator));
             }
 
             if (!scaleKeyFrames.xKeyFrames.isEmpty()) {
                 boneAnimationQueue.scaleXQueue
-                        .add(getAnimationPointAtTick(scaleKeyFrames.xKeyFrames, tick, false, Axis.X, evaluator));
+                        .add(KeyframeSampler.sample(scaleKeyFrames.xKeyFrames, tick, false, Axis.X, evaluator));
                 boneAnimationQueue.scaleYQueue
-                        .add(getAnimationPointAtTick(scaleKeyFrames.yKeyFrames, tick, false, Axis.Y, evaluator));
+                        .add(KeyframeSampler.sample(scaleKeyFrames.yKeyFrames, tick, false, Axis.Y, evaluator));
                 boneAnimationQueue.scaleZQueue
-                        .add(getAnimationPointAtTick(scaleKeyFrames.zKeyFrames, tick, false, Axis.Z, evaluator));
+                        .add(KeyframeSampler.sample(scaleKeyFrames.zKeyFrames, tick, false, Axis.Z, evaluator));
             }
         }
 
-        if (soundListener != null) {
-            for (EventKeyFrame<String> soundKeyFrame : currentAnimation.soundKeyFrames) {
-                if (!this.executedKeyFrames.contains(soundKeyFrame) && tick >= soundKeyFrame.getStartTick()) {
-                    SoundKeyframeEvent<T> event = new SoundKeyframeEvent<>(this.animatable, tick,
-                            soundKeyFrame.getEventData(), this, context);
-                    soundListener.playSound(event);
-
-                    this.executedKeyFrames.add(soundKeyFrame);
-                }
-            }
-        }
-        if (particleListener != null) {
-            for (ParticleEventKeyFrame particleEventKeyFrame : currentAnimation.particleKeyFrames) {
-                if (!this.executedKeyFrames.contains(
-                        particleEventKeyFrame) && tick >= particleEventKeyFrame.getStartTick()) {
-                    ParticleKeyFrameEvent<T> event = new ParticleKeyFrameEvent<>(this.animatable, tick,
-                            particleEventKeyFrame.effect, particleEventKeyFrame.locator, particleEventKeyFrame.script,
-                            this, context);
-                    particleListener.summonParticle(event);
-
-                    this.executedKeyFrames.add(particleEventKeyFrame);
-                }
-            }
-        }
-        if (customInstructionListener != null) {
-            for (EventKeyFrame<Evaluatable> customInstructionKeyFrame : currentAnimation.customInstructionKeyframes) {
-                if (!this.executedKeyFrames.contains(
-                        customInstructionKeyFrame) && tick >= customInstructionKeyFrame.getStartTick()) {
-                    CustomInstructionKeyframeEvent<T> event = new CustomInstructionKeyframeEvent<>(this.animatable,
-                            tick, customInstructionKeyFrame.getEventData(), this, context);
-                    customInstructionListener.executeInstruction(event);
-
-                    this.executedKeyFrames.add(customInstructionKeyFrame);
-                }
-            }
-        }
+        eventDispatcher.dispatch(this, tick, context);
 
         if (this.transitionLengthTicks == 0 && shouldResetTick && this.animationState == AnimationState.Transitioning) {
             previousAnimation = currentAnimation;
@@ -698,59 +550,6 @@ public class AnimationController<T extends IAnimatable> {
             // assert tick - this.tickOffset >= 0;
             return animationSpeed * Math.max(tick - tickOffset, 0.0D);
         }
-    }
-
-    private AnimationPoint getTransitionPointAtTick(ExecutionContext context, List<KeyFrame<Evaluatable>> frames, double tick, boolean isRotation,
-                                                    Axis axis, Evaluator evaluator) {
-        setAnimTime(context, tick);
-        return getAnimationPointAtTick(frames, tick, isRotation, axis, evaluator);
-    }
-
-    // Helper method to transform a KeyFrameLocation to an AnimationPoint
-    private AnimationPoint getAnimationPointAtTick(List<KeyFrame<Evaluatable>> frames, double tick, boolean isRotation,
-                                                   Axis axis, Evaluator evaluator) {
-        KeyFrameLocation<KeyFrame<Evaluatable>> location = getCurrentKeyFrameLocation(frames, tick);
-        KeyFrame<Evaluatable> currentFrame = location.currentFrame;
-        double startValue = currentFrame.getStartValue().evaluate(evaluator);
-        double endValue = currentFrame.getEndValue().evaluate(evaluator);
-
-        if (isRotation) {
-            if (!currentFrame.getStartValue().isConstant()) {
-                startValue = Math.toRadians(startValue);
-                if (axis == Axis.X || axis == Axis.Y) {
-                    startValue *= -1;
-                }
-            }
-            if (!currentFrame.getEndValue().isConstant()) {
-                endValue = Math.toRadians(endValue);
-                if (axis == Axis.X || axis == Axis.Y) {
-                    endValue *= -1;
-                }
-            }
-        }
-
-        return new AnimationPoint(currentFrame, location.currentTick, currentFrame.getLength(), startValue, endValue);
-    }
-
-    /**
-     * Returns the current keyframe object, plus how long the previous keyframes
-     * have taken (aka elapsed animation time)
-     **/
-    private KeyFrameLocation<KeyFrame<Evaluatable>> getCurrentKeyFrameLocation(List<KeyFrame<Evaluatable>> frames,
-                                                                               double ageInTicks) {
-        double totalTimeTracker = 0;
-        for (KeyFrame<Evaluatable> frame : frames) {
-            totalTimeTracker += frame.getLength();
-            if (totalTimeTracker > ageInTicks) {
-                double tick = (ageInTicks - (totalTimeTracker - frame.getLength()));
-                return new KeyFrameLocation<>(frame, tick);
-            }
-        }
-        return new KeyFrameLocation<>(frames.get(frames.size() - 1), ageInTicks);
-    }
-
-    private void resetEventKeyFrames() {
-        this.executedKeyFrames.clear();
     }
 
     public void markNeedsReload() {
