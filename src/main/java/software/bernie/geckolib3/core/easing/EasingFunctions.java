@@ -8,37 +8,16 @@ public final class EasingFunctions
 {
 	private EasingFunctions() {}
 
-	// The MIT license notice below applies to the easing functions below except for bounce and step
-	/**
-	 * Copyright (c) Facebook, Inc. and its affiliates.
-	 *
-	 * This source code is licensed under the MIT license found in the
-	 * LICENSE file in the root directory of this source tree.
-	 */
 
-	/**
-	 * Runs an easing function forwards.
-	 */
-	static Function<Double, Double> in(Function<Double, Double> easing)
-	{
+	static Function<Double, Double> in(Function<Double, Double> easing) {
 		return easing;
 	}
 
-	/**
-	 * Runs an easing function backwards.
-	 */
-	static Function<Double, Double> out(Function<Double, Double> easing)
-	{
+	static Function<Double, Double> out(Function<Double, Double> easing) {
 		return t -> 1 - easing.apply(1 - t);
 	}
 
-	/**
-	 * Makes any easing function symmetrical. The easing function will run
-	 * forwards for half of the duration, then backwards for the rest of the
-	 * duration.
-	 */
-	static Function<Double, Double> inOut(Function<Double, Double> easing)
-	{
+	static Function<Double, Double> inOut(Function<Double, Double> easing) {
 		return t ->
 		{
 			if (t < 0.5)
@@ -49,147 +28,54 @@ public final class EasingFunctions
 		};
 	}
 
-	/**
-	 * A stepping function, returns 1 for any positive value of `n`.
-	 */
-	static Function<Double, Double> step0()
-	{
+	static Function<Double, Double> step0() {
 		return n -> n > 0 ? 1D : 0;
 	}
 
-	/**
-	 * A stepping function, returns 1 if `n` is greater than or equal to 1.
-	 */
-	static Function<Double, Double> step1()
-	{
+	static Function<Double, Double> step1() {
 		return n -> n >= 1D ? 1D : 0;
 	}
 
-	/**
-	 * A linear function, `f(t) = t`. Position correlates to elapsed time one to
-	 * one.
-	 * <p>
-	 * http://cubic-bezier.com/#0,0,1,1
-	 */
 	static double linear(double t)
 	{
 		return t;
 	}
 
-	/**
-	 * A simple inertial interaction, similar to an object slowly accelerating to
-	 * speed.
-	 *
-	 * http://cubic-bezier.com/#.42,0,1,1
-	 */
-	// static ease(t) {
-	// 		if (!ease) {
-	// 				ease = Easing.bezier(0.42, 0, 1, 1);
-	// 		}
-	// 		return ease(t);
-	// }
-
-	/**
-	 * A quadratic function, `f(t) = t * t`. Position equals the square of elapsed
-	 * time.
-	 * <p>
-	 * http://easings.net/#easeInQuad
-	 */
 	static double quad(double t)
 	{
 		return t * t;
 	}
 
-	/**
-	 * A cubic function, `f(t) = t * t * t`. Position equals the cube of elapsed
-	 * time.
-	 * <p>
-	 * http://easings.net/#easeInCubic
-	 */
-	static double cubic(double t)
-	{
+	static double cubic(double t) {
 		return t * t * t;
 	}
 
-	/**
-	 * A power function. Position is equal to the Nth power of elapsed time.
-	 * <p>
-	 * n = 4: http://easings.net/#easeInQuart
-	 * n = 5: http://easings.net/#easeInQuint
-	 */
-	static Function<Double, Double> poly(double n)
-	{
+	static Function<Double, Double> poly(double n) {
 		return (t) -> Math.pow(t, n);
 	}
 
-	/**
-	 * A sinusoidal function.
-	 * <p>
-	 * http://easings.net/#easeInSine
-	 */
-	static double sin(double t)
-	{
+	static double sin(double t) {
 		return 1 - Math.cos((float) ((t * Math.PI) / 2));
 	}
 
-	/**
-	 * A circular function.
-	 * <p>
-	 * http://easings.net/#easeInCirc
-	 */
-	static double circle(double t)
-	{
+	static double circle(double t) {
 		return 1 - Math.sqrt(1 - t * t);
 	}
 
-	/**
-	 * An exponential function.
-	 * <p>
-	 * http://easings.net/#easeInExpo
-	 */
-	static double exp(double t)
-	{
+	static double exp(double t) {
 		return Math.pow(2, 10 * (t - 1));
 	}
 
-	/**
-	 * A simple elastic interaction, similar to a spring oscillating back and
-	 * forth.
-	 * <p>
-	 * Default bounciness is 1, which overshoots a little bit once. 0 bounciness
-	 * doesn't overshoot at all, and bounciness of N > 1 will overshoot about N
-	 * times.
-	 * <p>
-	 * http://easings.net/#easeInElastic
-	 */
-	static Function<Double, Double> elastic(Double bounciness)
-	{
+	static Function<Double, Double> elastic(Double bounciness) {
 		double p = (bounciness == null ? 1 : bounciness) * Math.PI;
 		return t -> 1 - Math.pow(Math.cos((float) ((t * Math.PI) / 2)), 3) * Math.cos((float) (t * p));
 	}
 
-
-	/**
-	 * Use with `Animated.parallel()` to create a simple effect where the object
-	 * animates back slightly as the animation starts.
-	 * <p>
-	 * Wolfram Plot:
-	 * <p>
-	 * - http://tiny.cc/back_default (s = 1.70158, default)
-	 */
-	static Function<Double, Double> back(Double s)
-	{
+	static Function<Double, Double> back(Double s) {
 		double p = s == null ? 1.70158 : s * 1.70158;
 		return t -> t * t * ((p + 1) * t - p);
 	}
 
-	/**
-	 * Provides a simple bouncing effect.
-	 * <p>
-	 * Props to Waterded#6455 for making the bounce adjustable and GiantLuigi4#6616 for helping clean it up
-	 * using min instead of ternaries
-	 * http://easings.net/#easeInBounce
-	 */
 	public static Function<Double, Double> bounce(Double s)
 	{
 		double k = s == null ? 0.5 : s;
@@ -211,39 +97,6 @@ public final class EasingFunctions
 		return Math.min(Math.min(a, b), Math.min(c, d));
 	}
 
-	// The MIT license notice below applies to the function findIntervalBorderIndex
-	/* The MIT License (MIT)
-
-	Copyright (c) 2015 Boris Chumichev
-
-	Permission is hereby granted, free of charge, to any person obtaining a copy of
-	this software and associated documentation files (the "Software"), to deal in
-	the Software without restriction, including without limitation the rights to
-	use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
-	the Software, and to permit persons to whom the Software is furnished to do so,
-	subject to the following conditions:
-
-	The above copyright notice and this permission notice shall be included in all
-	copies or substantial portions of the Software.
-
-	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-	IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
-	FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
-	COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
-	IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
-	CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-	/**
-	 *
-	 * Utilizes bisection method to search an interval to which
-	 * point belongs to, then returns an index of left or right
-	 * border of the interval
-	 *
-	 * @param {Number} point
-	 * @param {Array} intervals
-	 * @param {Boolean} useRightBorder
-	 * @returns {Number}
-	 */
 	static int findIntervalBorderIndex(double point, double[] intervals, boolean useRightBorder) {
 		//If point is beyond given intervals
 		if (point < intervals[0])
