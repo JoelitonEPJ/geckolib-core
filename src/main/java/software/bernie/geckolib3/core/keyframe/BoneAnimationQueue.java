@@ -7,18 +7,20 @@ package software.bernie.geckolib3.core.keyframe;
 
 import software.bernie.geckolib3.core.processor.IBone;
 
+import java.util.LinkedList;
+
 public class BoneAnimationQueue
 {
 	public final IBone bone;
-	public AnimationPointQueue rotationXQueue = new AnimationPointQueue();
-	public AnimationPointQueue rotationYQueue = new AnimationPointQueue();
-	public AnimationPointQueue rotationZQueue = new AnimationPointQueue();
-	public AnimationPointQueue positionXQueue = new AnimationPointQueue();
-	public AnimationPointQueue positionYQueue = new AnimationPointQueue();
-	public AnimationPointQueue positionZQueue = new AnimationPointQueue();
-	public AnimationPointQueue scaleXQueue = new AnimationPointQueue();
-	public AnimationPointQueue scaleYQueue = new AnimationPointQueue();
-	public AnimationPointQueue scaleZQueue = new AnimationPointQueue();
+	public LinkedList<AnimationPoint> rotationXQueue = new LinkedList<>();
+	public LinkedList<AnimationPoint> rotationYQueue = new LinkedList<>();
+	public LinkedList<AnimationPoint> rotationZQueue = new LinkedList<>();
+	public LinkedList<AnimationPoint> positionXQueue = new LinkedList<>();
+	public LinkedList<AnimationPoint> positionYQueue = new LinkedList<>();
+	public LinkedList<AnimationPoint> positionZQueue = new LinkedList<>();
+	public LinkedList<AnimationPoint> scaleXQueue = new LinkedList<>();
+	public LinkedList<AnimationPoint> scaleYQueue = new LinkedList<>();
+	public LinkedList<AnimationPoint> scaleZQueue = new LinkedList<>();
 
 	public BoneAnimationQueue(IBone bone)
 	{

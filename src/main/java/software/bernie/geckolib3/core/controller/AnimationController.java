@@ -426,7 +426,7 @@ public class AnimationController<T extends IAnimatable> {
                 justStartedTransition = false;
                 this.currentAnimation = animationQueue.poll();
                 resetEventKeyFrames();
-                saveSnapshotsForAnimation(currentAnimation, boneSnapshotCollection);
+                saveSnapshotsForAnimation(boneSnapshotCollection);
             }
             if (currentAnimation != null) {
                 setAnimTime(context, 0);
@@ -550,8 +550,7 @@ public class AnimationController<T extends IAnimatable> {
 
     // At the beginning of a new transition, save a snapshot of the model's
     // rotation, position, and scale values as the initial value to lerp from
-    private void saveSnapshotsForAnimation(Animation animation,
-                                           HashMap<String, Pair<IBone, BoneSnapshot>> boneSnapshotCollection) {
+    private void saveSnapshotsForAnimation(HashMap<String, Pair<IBone, BoneSnapshot>> boneSnapshotCollection) {
         for (Pair<IBone, BoneSnapshot> snapshot : boneSnapshotCollection.values()) {
             this.boneSnapshots.put(snapshot.getLeft().getName(), new BoneSnapshot(snapshot.getRight()));
         }
