@@ -47,4 +47,9 @@ public class EasingManager
 		return args.easingType.createFunction(args.arg0);
 	}
 
+	public static Function<Double, Double> bounce(Double s)
+	{
+		return EasingFunctions.bounce(s);
+	}
+
 }
